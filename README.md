@@ -21,8 +21,9 @@ Add credentials to a `.env` file (example below).
 
 Clone repository
 ```bash
-git clone <repository-url>
-cd aerchain-assignment
+git clone https://github.com/paramesh244/AI-Powered-RFP-Management-System.git
+cd AI-Powered-RFP-Management-System
+
 ```
 
 Backend
