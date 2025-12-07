@@ -73,11 +73,11 @@ VITE_API_BASE_URL=http://localhost:3000
 ```
 
 
-Run backend
+Run frontend
 ```bash
-npm start
-# Backend: http://localhost:3000
-# IMAP listener starts automatically
+npm run dev
+# frontend: http://localhost:5173
+
 ```
 
 
