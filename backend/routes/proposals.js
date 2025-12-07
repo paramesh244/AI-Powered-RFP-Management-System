@@ -3,12 +3,10 @@ const express = require('express');
 const router = express.Router();
 const ai = require('../services/aiService');
 
-const RFP = require('../models/rfp');
+const RFP = require('../models/Rfp');
 
 const Proposal = require('../models/Proposal');
 const mongoose = require('mongoose');
-
-
 
 
 
@@ -50,35 +48,6 @@ router.get('/:id', async (req, res) => {
 }
 )
 
-//compare proposals
-
-// router.get('/:id/comparison', async (req, res) => {
-//   const rfp = await RFP.findById(req.params.id);
-//   const proposals = await Proposal.find({ rfpId: req.params.id }).populate('vendorId');
-//   if (!proposals || proposals.length === 0) {
-//     return res.status(404).json({
-//       success: false,
-//       message: 'No proposals found for this RFP'
-//     });
-//   }
-//   const parsed = proposals.map(p => ({
-//     vendorId: p.vendorId._id.toString(),
-//     vendorName: p.vendorId.name,
-//     price: p.price,
-//     delivery: p.delivery,
-//     warranty: p.warranty,
-//     parsed_data: p.parsed_data
-//   }));
-//   const aiRes = await ai.compareProposals(rfp, parsed);
-//   if(!aiRes){
-//     return res.status(500).json({
-//       success: false,
-//       message: 'AI comparison failed'
-//     });
-//   }
-//   res.json({ proposals: parsed, analysis: aiRes });
-// });
-
 router.get('/:id/comparison', async (req, res) => {
   try {
     const rfpId = req.params.id;
@@ -101,6 +70,14 @@ router.get('/:id/comparison', async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "No proposals found for this RFP"
+      });
+    }
+
+    if (proposals.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "At least two proposals are required for comparison",
+        proposals
       });
     }
 

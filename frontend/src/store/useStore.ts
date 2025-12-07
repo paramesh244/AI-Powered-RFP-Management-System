@@ -8,11 +8,12 @@ interface AppState {
     vendors: Vendor[];
     responses: VendorResponse[];
     isLoading: boolean;
+    isAnalyzing: boolean;
     error: string | null;
 
     // Actions
     fetchVendors: () => Promise<void>;
-    createRFP: (description: string) => Promise<void>;
+    createRFP: (description: string, forceCreate?: boolean) => Promise<void>;
     addVendor: (vendor: Partial<Vendor>) => Promise<void>;
     removeVendor: (id: string) => Promise<void>;
     sendRFP: (rfpId: string, vendorIds: string[]) => Promise<void>;
@@ -31,6 +32,8 @@ interface AppState {
     getComparison: (rfpId: string) => Promise<void>;
     clearError: () => void;
     comparison: ComparisonResponse | null;
+    duplicateRFP: RFP | null;
+    clearDuplicateRFP: () => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -38,9 +41,11 @@ export const useStore = create<AppState>((set) => ({
     vendors: [],
     responses: [],
     isLoading: false,
+    isAnalyzing: false,
     error: null,
     currentRFPId: null,
     comparison: null,
+    duplicateRFP: null,
 
     fetchVendors: async () => {
         set({ isLoading: true, error: null });
@@ -62,10 +67,17 @@ export const useStore = create<AppState>((set) => ({
         }
     },
 
-    createRFP: async (description: string) => {
-        set({ isLoading: true, error: null });
+    createRFP: async (description: string, forceCreate: boolean = false) => {
+        set({ isLoading: true, error: null, duplicateRFP: null });
         try {
-            const newRFP = await api.createRFP(description);
+            const result = await api.createRFP(description, forceCreate);
+
+            if ('isDuplicate' in result && result.isDuplicate) {
+                set({ duplicateRFP: result.existingRFP, isLoading: false });
+                return;
+            }
+
+            const newRFP = result as RFP;
             // Ensure status is set if not returned by API
             const rfpWithStatus = { ...newRFP, status: 'generated' as const };
             set((state) => ({
@@ -138,12 +150,12 @@ export const useStore = create<AppState>((set) => ({
     },
 
     getComparison: async (rfpId: string) => {
-        set({ isLoading: true, error: null, comparison: null }); // Clear previous comparison
+        set({ isAnalyzing: true, error: null, comparison: null }); // Clear previous comparison
         try {
             const comparison = await api.getComparison(rfpId);
-            set({ comparison, isLoading: false });
+            set({ comparison, isAnalyzing: false });
         } catch (error) {
-            set({ error: (error as Error).message, isLoading: false });
+            set({ error: (error as Error).message, isAnalyzing: false });
         }
     },
 
@@ -152,7 +164,7 @@ export const useStore = create<AppState>((set) => ({
         try {
             const updatedRFP = await api.updateRFP(id, updates);
             set((state) => ({
-                rfps: state.rfps.map((rfp) => (rfp._id === id ? { ...updatedRFP, status: rfp.status } : rfp)),
+                rfps: state.rfps.map((rfp) => (rfp._id === id ? { ...rfp, ...updatedRFP, status: rfp.status } : rfp)),
                 isLoading: false
             }));
         } catch (error) {
@@ -177,4 +189,5 @@ export const useStore = create<AppState>((set) => ({
 
     setCurrentRFPId: (id) => set({ currentRFPId: id }),
     clearError: () => set({ error: null }),
+    clearDuplicateRFP: () => set({ duplicateRFP: null }),
 }));

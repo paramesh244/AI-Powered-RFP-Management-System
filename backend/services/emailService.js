@@ -16,7 +16,6 @@ async function sendRfpEmail(vendor, rfp, htmlContent){
   const mailOptions = {
     from: process.env.EMAIL_SMTP_USER,
     to: vendor.email,
-    // subject: `RFP: ${rfp.title} `,
     subject: `RFP: ${rfp.title} [rfpId:${rfp._id}]`,
     html: htmlContent
   };
@@ -32,7 +31,10 @@ function buildRfpHtml(rfp){
   <ul>${items}</ul>
   <p><strong>Budget:</strong> ${rfp.budget || 'N/A'}</p>
   <p><strong>Delivery:</strong> ${rfp.delivery_timeline}</p>
-  <p><strong>Payment will be done within ${rfp.payment_terms || 'N/A'} days after receiving the invoice.</strong></p>
+   ${rfp.payment_terms 
+      ? `<p><strong>Payment will be done within ${rfp.payment_terms} days after receiving the invoice.</strong></p>` 
+      : ''
+  }
   <p><strong>Warranty:</strong> ${rfp.warranty || 'N/A'}</p>
   <p>Please reply to this email with your proposal. Thank you!</p>`;
 }

@@ -13,7 +13,6 @@ const ai = new GoogleGenAI({
     } catch (err) {
       // try to extract first JSON object from text
       const match = text.match(/\{[\s\S]*\}/);
-    //   console.log(match)
       if (match) {
         try {
           return JSON.parse(match[0]);
@@ -27,21 +26,41 @@ const ai = new GoogleGenAI({
 
 async function toRFP(text) {
 
-    const prompt = `You are an assistant that converts procurement requirements into a strict JSON structure.
-    Input: ${text}
+const prompt = `
+You are an assistant that converts natural-language procurement requirements into a strict JSON structure.
 
-Output JSON schema:
+If the input does NOT clearly describe a procurement request (for example: random text, greetings, jokes, incomplete information, or irrelevant content), then return:
+
+{
+  "error": true,
+  "message": "Invalid procurement input. Please provide clear purchase or requirement details."
+}
+
+Otherwise, analyze the input and return ONLY valid JSON matching the schema below:
+
 {
   "title": string,
   "description": string,
-  "budget": number, // total budget or null
-  "delivery_timeline": string,
-  "items": [{ "name": string, "quantity": number, "specifications": string }],
-  "payment_terms": string,
-  "warranty": string
+  "budget": number | null, 
+  "delivery_timeline": string | null,
+  "items": [
+    { "name": string, "quantity": number | null, "specifications": string | null }
+  ],
+  "payment_terms": string | null,
+  "warranty": string | null
+  
 }
-Return only valid JSON.
-  `;
+
+Rules:
+- Return strictly JSON. No extra text.
+- All fields must exist. If unknown or not provided, set them to null or empty arrays.
+- Do not hallucinate unrealistic values.
+- Do not include comments or explanations.
+- If invalid input → return the error JSON format above.
+
+Input:
+${text}
+`;
 
    const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
@@ -102,7 +121,7 @@ Output REQUIREMENTS:
     { "vendorId": "<id>", "score": <number 0-10>, "summary": "<short summary>" }
   ],
   "recommended": { "vendorId": "<id>", "reason": "<one-sentence reason>" },
-  "savings": <number|null>  // total savings relative to budget (positive if under budget), or null
+  "savings": <number|null>  // total savings relative to budget (positive if under budget or 0), or null
 }
 
 - If savings aren't applicable, set "savings": null.

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
 
-import { Mail, Bot, ArrowLeft, BarChart2 } from 'lucide-react';
+import { Mail, ArrowLeft, BarChart2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import type { VendorResponse } from '../types';

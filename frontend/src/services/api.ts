@@ -1,6 +1,6 @@
 import type { RFP, Vendor, VendorResponse } from '../types';
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const handleResponse = async (response: Response, defaultMessage: string) => {
     if (!response.ok) {
@@ -19,12 +19,18 @@ const handleResponse = async (response: Response, defaultMessage: string) => {
 };
 
 export const api = {
-    createRFP: async (naturalLanguageDescription: string): Promise<RFP> => {
+    createRFP: async (naturalLanguageDescription: string, forceCreate: boolean = false): Promise<RFP | { isDuplicate: true; existingRFP: RFP }> => {
         const response = await fetch(`${API_BASE_URL}/rfp/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ naturalLanguageDescription })
+            body: JSON.stringify({ naturalLanguageDescription, forceCreate })
         });
+
+        if (response.status === 999) {
+            const data = await response.json();
+            return { isDuplicate: true, existingRFP: data.existingRFP };
+        }
+
         return handleResponse(response, 'Failed to create RFP');
     },
 

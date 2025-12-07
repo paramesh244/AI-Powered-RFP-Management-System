@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { Search, Mail, CheckSquare, Square, Send, Plus, Trash2, X, User, Tag, Phone, Edit2, RotateCcw } from 'lucide-react';
+import { Search, Mail, CheckSquare, Square, Send, Plus, Trash2, X, User, Tag, Phone, Edit2, RotateCcw, AlertCircle, CheckCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { Vendor } from '../types';
 
@@ -22,6 +22,9 @@ export default function Vendors() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+
+    const [validationError, setValidationError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     // Form State
     const [vendorForm, setVendorForm] = useState<Partial<Vendor>>({
@@ -53,32 +56,66 @@ export default function Vendors() {
 
         // Only navigate if no error
         if (!useStore.getState().error) {
-            navigate('/inbox');
+            setSuccessMessage("RFP sent successfully to selected vendors!");
+            setTimeout(() => {
+                navigate('/inbox');
+            }, 2000);
         }
     };
 
     const handleAddVendor = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!vendorForm.name || !vendorForm.email) return;
+        setValidationError(null);
+        if (!vendorForm.name || !vendorForm.email) {
+            setValidationError("Name and Email are required.");
+            return;
+        }
+
+        if (vendorForm.contact_person && /^\d+$/.test(vendorForm.contact_person)) {
+            setValidationError("Contact person name cannot be numeric.");
+            return;
+        }
 
         await addVendor(vendorForm);
-        setIsAddModalOpen(false);
-        resetForm();
+
+        const error = useStore.getState().error;
+        if (error) {
+            setValidationError(error);
+        } else {
+            setIsAddModalOpen(false);
+            resetForm();
+        }
     };
 
     const handleUpdateVendor = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!editingVendor || !vendorForm.name || !vendorForm.email) return;
+        setValidationError(null);
+        if (!editingVendor || !vendorForm.name || !vendorForm.email) {
+            setValidationError("Name and Email are required.");
+            return;
+        }
+
+        if (vendorForm.contact_person && /^\d+$/.test(vendorForm.contact_person)) {
+            setValidationError("Contact person name cannot be numeric.");
+            return;
+        }
 
         await updateVendor(editingVendor._id, vendorForm);
-        setIsEditModalOpen(false);
-        setEditingVendor(null);
-        resetForm();
+
+        const error = useStore.getState().error;
+        if (error) {
+            setValidationError(error);
+        } else {
+            setIsEditModalOpen(false);
+            setEditingVendor(null);
+            resetForm();
+        }
     };
 
     const resetForm = () => {
         setVendorForm({ name: '', email: '', contact_person: '', phone: '', tags: [] });
         setTagInput('');
+        setValidationError(null);
     };
 
     const openEditModal = (vendor: Vendor) => {
@@ -130,6 +167,12 @@ export default function Vendors() {
                 <div>
                     <h2 className="text-2xl font-bold text-slate-900">Vendor Management</h2>
                     <p className="text-slate-500">Manage your vendor master list and select recipients.</p>
+                    {successMessage && (
+                        <div className="mt-4 p-4 bg-green-50 text-green-700 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                            <CheckCircle className="w-5 h-5" />
+                            {successMessage}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -268,6 +311,15 @@ export default function Vendors() {
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
+
+                        {validationError && (
+                            <div className="px-6 pt-4">
+                                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4" />
+                                    {validationError}
+                                </div>
+                            </div>
+                        )}
 
                         <form onSubmit={isEditModalOpen ? handleUpdateVendor : handleAddVendor} className="p-6 space-y-4">
                             <div>

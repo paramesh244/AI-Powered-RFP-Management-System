@@ -1,8 +1,7 @@
 const Imap = require('node-imap');
 const { simpleParser } = require('mailparser');
 const Proposal = require('../models/Proposal');
-const Vendor = require('../models/vendor');
-const RFP =  require('../models/rfp');
+const Vendor = require('../models/Vendor');
 const ai = require('./aiService');
 
 let imapConfig = {
@@ -12,11 +11,6 @@ let imapConfig = {
   port: parseInt(process.env.IMAP_PORT),
   tls: true
 };
-
-
-
-
-
 
 async function bufferFromAttachment(att) {
   if (!att) return null;
@@ -32,8 +26,8 @@ async function bufferFromAttachment(att) {
 
 async function extractPdfTextFromAttachment(att) {
   try {
-    // ensure pdfjsLib is loaded earlier; your require/import is fine if it returned an object
-    const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.mjs'); // try this first; if you used .mjs earlier it may also be OK
+  
+    const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.mjs');
 
     // get a Buffer from the attachment 
     const buf = await bufferFromAttachment(att);
@@ -42,10 +36,8 @@ async function extractPdfTextFromAttachment(att) {
       return null;
     }
 
-    // IMPORTANT: pdfjs expects Uint8Array (not Node Buffer) for `data`
     const uint8 = new Uint8Array(buf);
 
-    // load document
     const loadingTask = pdfjsLib.getDocument({ data: uint8 });
     const pdf = await loadingTask.promise;
 
@@ -60,7 +52,7 @@ async function extractPdfTextFromAttachment(att) {
     }
 
     const text = fullText.trim();
-    console.log(`pdfjs: filename=${att.filename} pages=${pdf.numPages} textLength=${text.length}`);
+
     if (text && text.length > 10) return text;
     return null;
   } catch (err) {
@@ -87,25 +79,16 @@ async function processMessage(mail){
     return;
   }
 
-  // parse body + attachments
-  // let bodyText = mail.text || mail.html || '';
 
   let bodyText = (mail.text || (mail.html ? mail.html.replace(/<[^>]+>/g, '') : '') || '').trim();
 
   //attachments handling
+
   let attachmentsText = '';
-  const savedAttachments = []; 
-
-
+  
   if (Array.isArray(mail.attachments) && mail.attachments.length) {
     for (const att of mail.attachments) {
-      console.log('Attachment found:', {
-        filename: att.filename,
-        contentType: att.contentType,
-        size: att.size || (att.content && att.content.length) || 'unknown'
-      });
-
-      // consider an attachment to be PDF if filename ends with .pdf or contentType includes pdf
+     
       const looksLikePdf = (att.filename && att.filename.toLowerCase().endsWith('.pdf')) ||
                           (att.contentType && att.contentType.toLowerCase().includes('pdf'));
 
@@ -126,12 +109,7 @@ async function processMessage(mail){
     bodyText = (bodyText + '\n\n' + attachmentsText).trim();
 
 
-
-
-  // use AI to parse
   const parsed = await ai.parseVendorResponse(bodyText);
-
-  // if no rfpId, try to map by keywords (title match) - optional
 
   // create proposal
   const proposal = new Proposal({

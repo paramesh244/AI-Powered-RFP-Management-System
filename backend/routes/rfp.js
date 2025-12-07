@@ -2,46 +2,37 @@ const express = require('express');
 
 const router = express.Router();
 const ai = require('../services/aiService');
-const RFP = require('../models/rfp');
+const RFP = require('../models/Rfp');
+const mongoose = require('mongoose');
 
 const emailService = require('../services/emailService');
-const Vendor = require('../models/vendor');
+const Vendor = require('../models/Vendor');
 const Proposal = require('../models/Proposal');
 
-// router.post("/create",async(req,res)=>{
-//     try {
-
-//         const {naturalLanguageDescription} = req.body;
-
-//         const structuredRFP = await ai.toRFP(naturalLanguageDescription);
-//         const newRFP = new RFP(structuredRFP);
-//         await newRFP.save();
-
-//         res.status(201).json(newRFP);
-
-//     } catch (err) {
-//         res.status(500).json({ error: err.message });
-//     }
-// });
 
 router.post("/create", async (req, res) => {
   try {
-    const { naturalLanguageDescription } = req.body;
+    const { naturalLanguageDescription,forceCreate=false} = req.body;
 
-    if (!naturalLanguageDescription || naturalLanguageDescription.trim().length < 10) {
+    if (!naturalLanguageDescription || typeof naturalLanguageDescription !== 'string' || naturalLanguageDescription.trim().length < 10) {
       return res.status(400).json({
         error: "Invalid input. Please provide a meaningful RFP description."
       });
     }
 
     const structuredRFP = await ai.toRFP(naturalLanguageDescription);
-
+    if(structuredRFP.error){
+      return res.status(500).json({
+        message: structuredRFP.message
+      });
+    }
+   
 
     if (
       !structuredRFP ||
       !structuredRFP.title ||
-      structuredRFP.title.toLowerCase().includes("unable to extract") ||
-      structuredRFP.description.toLowerCase().includes("not contain discernible")
+      structuredRFP.title.toLowerCase().includes("unable to extract","Unspecified Procurement Request") ||
+      structuredRFP.description.toLowerCase().includes("not contain discernible","The input provided is largely uninterpretable","characters appear to be random","Unspecified Procurement Request","system-generated noise")
     ) {
       return res.status(400).json({
         message: "Unable to process the input. Please provide a valid RFP description."
@@ -54,9 +45,20 @@ router.post("/create", async (req, res) => {
       });
     }
 
-    const newRFP = new RFP(structuredRFP);
-    await newRFP.save();
+    const itemNames = structuredRFP.items.map(item => item.name);
 
+    const newRFP = new RFP(structuredRFP);
+   
+    const existingrfp = await RFP.findOne({items: {$elemMatch: {name: {$in: itemNames}}},budget:structuredRFP.budget});
+  
+    if(existingrfp && !forceCreate){
+      return  res.status(999).json({
+        message: "An RFP with similar items and price already exists. Do you want to use the existing RFP?",
+        existingRFP: existingrfp
+      });
+    }
+
+    await newRFP.save();
     return res.status(201).json(newRFP);
 
   } catch (err) {
@@ -101,6 +103,7 @@ router.post('/:id/send', async (req, res) => {
 
     const { vendorIds } = req.body;
 
+    try{
     const rfp = await RFP.findById(req.params.id);
     const vendors = await Vendor.find({ _id: { $in: vendorIds }});
     const html = emailService.buildRfpHtml(rfp);
@@ -110,9 +113,11 @@ router.post('/:id/send', async (req, res) => {
         await emailService.sendRfpEmail(v, rfp, html);
     }
     res.json({ message: 'Email sent to vendors' });
+  }
+    catch(err){
+        res.status(500).json({ error: err.message });
+    }
 });
-
-
 
 
 //get all proposals for rfp

@@ -1,8 +1,8 @@
 const router = require('express').Router();
-const Vendor = require('../models/vendor');
+const Vendor = require('../models/Vendor');
 const mongoose = require('mongoose');
 const Joi = require('joi');
-const { route } = require('./rfp');
+
 
 const validateVendor = Joi.object({
   name: Joi.string().min(2).required(),

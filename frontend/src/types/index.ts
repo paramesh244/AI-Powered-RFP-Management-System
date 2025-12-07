@@ -63,6 +63,7 @@ export interface ComparisonProposal {
     price: number;
     delivery: string;
     warranty: string;
+    notes?: string;
 }
 
 export interface ComparisonAnalysis {

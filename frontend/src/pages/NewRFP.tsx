@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { Bot, ArrowRight, Loader2, FileText, CheckCircle, AlertCircle, Edit2, Save, X } from 'lucide-react';
+import { Bot, ArrowRight, Loader2, FileText, CheckCircle, AlertCircle, Edit2, Save, X, Plus } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { RFP } from '../types';
 
@@ -13,6 +13,9 @@ export default function NewRFP() {
     const error = useStore((state) => state.error);
     const rfps = useStore((state) => state.rfps);
     const currentRFPId = useStore((state) => state.currentRFPId);
+    const duplicateRFP = useStore((state) => state.duplicateRFP);
+    const clearDuplicateRFP = useStore((state) => state.clearDuplicateRFP);
+    const setCurrentRFPId = useStore((state) => state.setCurrentRFPId);
 
     const [input, setInput] = useState('');
     const [showPreview, setShowPreview] = useState(false);
@@ -24,12 +27,23 @@ export default function NewRFP() {
 
     // Find the newly created RFP if we are in preview mode
     const generatedRFP = currentRFPId ? rfps.find(r => r._id === currentRFPId) : null;
+    const clearError = useStore((state) => state.clearError);
 
     useEffect(() => {
         if (generatedRFP) {
             setEditForm(generatedRFP);
         }
     }, [generatedRFP]);
+
+    useEffect(() => {
+        if (error || validationError) {
+            const timer = setTimeout(() => {
+                if (error) clearError();
+                if (validationError) setValidationError(null);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [error, validationError, clearError]);
 
     const validateInput = (text: string) => {
         if (text.length < 10) return "Please provide more details about your requirements.";
@@ -92,7 +106,7 @@ export default function NewRFP() {
                                         className="w-full p-2 border rounded-lg"
                                     />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-1">Budget</label>
                                         <input
@@ -112,7 +126,101 @@ export default function NewRFP() {
                                         />
                                     </div>
                                 </div>
-                                <div className="flex justify-end gap-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Payment Terms</label>
+                                        <input
+                                            type="text"
+                                            value={editForm.payment_terms || ''}
+                                            onChange={e => setEditForm({ ...editForm, payment_terms: e.target.value })}
+                                            className="w-full p-2 border rounded-lg"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Warranty</label>
+                                        <input
+                                            type="text"
+                                            value={editForm.warranty || ''}
+                                            onChange={e => setEditForm({ ...editForm, warranty: e.target.value })}
+                                            className="w-full p-2 border rounded-lg"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Line Items</label>
+                                    <div className="space-y-3">
+                                        {editForm.items?.map((item, idx) => (
+                                            <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-start p-3 border rounded-lg md:border-none md:p-0 bg-slate-50 md:bg-transparent">
+                                                <div className="md:col-span-4">
+                                                    <label className="block text-xs font-medium text-slate-500 mb-1 md:hidden">Item Name</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Item Name"
+                                                        value={item.name}
+                                                        onChange={e => {
+                                                            const newItems = [...(editForm.items || [])];
+                                                            newItems[idx] = { ...item, name: e.target.value };
+                                                            setEditForm({ ...editForm, items: newItems });
+                                                        }}
+                                                        className="w-full p-2 border rounded-lg text-sm"
+                                                    />
+                                                </div>
+                                                <div className="md:col-span-2">
+                                                    <label className="block text-xs font-medium text-slate-500 mb-1 md:hidden">Qty</label>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="Qty"
+                                                        value={item.quantity}
+                                                        onChange={e => {
+                                                            const newItems = [...(editForm.items || [])];
+                                                            newItems[idx] = { ...item, quantity: Number(e.target.value) };
+                                                            setEditForm({ ...editForm, items: newItems });
+                                                        }}
+                                                        className="w-full p-2 border rounded-lg text-sm"
+                                                    />
+                                                </div>
+                                                <div className="md:col-span-5">
+                                                    <label className="block text-xs font-medium text-slate-500 mb-1 md:hidden">Specs</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Specs"
+                                                        value={item.specifications}
+                                                        onChange={e => {
+                                                            const newItems = [...(editForm.items || [])];
+                                                            newItems[idx] = { ...item, specifications: e.target.value };
+                                                            setEditForm({ ...editForm, items: newItems });
+                                                        }}
+                                                        className="w-full p-2 border rounded-lg text-sm"
+                                                    />
+                                                </div>
+                                                <div className="md:col-span-1 pt-1 flex justify-end md:justify-start">
+                                                    <button
+                                                        onClick={() => {
+                                                            const newItems = editForm.items?.filter((_, i) => i !== idx);
+                                                            setEditForm({ ...editForm, items: newItems });
+                                                        }}
+                                                        className="text-red-400 hover:text-red-600 p-2 md:p-0"
+                                                    >
+                                                        <X className="w-5 h-5" />
+                                                        <span className="sr-only">Remove</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <button
+                                            onClick={() => setEditForm({
+                                                ...editForm,
+                                                items: [...(editForm.items || []), { name: '', quantity: 1, specifications: '' }]
+                                            })}
+                                            className="text-sm text-indigo-600 font-medium hover:text-indigo-700 flex items-center gap-1"
+                                        >
+                                            <Plus className="w-4 h-4" /> Add Item
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
                                     <button onClick={() => setIsEditing(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
                                     <button onClick={handleSaveEdit} className="px-4 py-2 bg-indigo-600 text-white rounded-lg flex items-center gap-2">
                                         <Save className="w-4 h-4" /> Save Changes
@@ -129,7 +237,7 @@ export default function NewRFP() {
                                         </button>
                                     </div>
                                     <div className="flex gap-4 text-sm text-slate-500">
-                                        <span>Budget: {generatedRFP.currency} {generatedRFP.budget.toLocaleString()}</span>
+                                        <span>Budget: {generatedRFP.currency} {generatedRFP.budget?.toLocaleString()}</span>
                                         <span>•</span>
                                         <span>Timeline: {generatedRFP.delivery_timeline}</span>
                                     </div>
@@ -161,7 +269,6 @@ export default function NewRFP() {
                                         </table>
                                     </div>
                                 </div>
-
                                 <div className="grid grid-cols-2 gap-6 bg-slate-50 p-6 rounded-xl">
                                     <div>
                                         <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Payment Terms</span>
@@ -253,6 +360,55 @@ export default function NewRFP() {
                 <div className="flex items-center gap-2 p-4 text-red-600 bg-red-50 rounded-lg animate-in fade-in slide-in-from-top-2">
                     <AlertCircle className="w-5 h-5" />
                     <p className="text-sm font-medium">{error || validationError}</p>
+                </div>
+            )}
+
+            {/* Duplicate RFP Modal */}
+            {duplicateRFP && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 bg-yellow-100 rounded-full text-yellow-600">
+                                <AlertCircle className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">Duplicate RFP Detected</h3>
+                                <p className="text-slate-500 mt-1 text-sm">
+                                    A similar RFP titled <span className="font-medium text-slate-900">"{duplicateRFP.title}"</span> already exists.
+                                </p>
+                                <div className="mt-2 text-sm text-slate-600 space-y-1 bg-slate-50 p-3 rounded-lg">
+                                    <p><span className="font-medium">Items:</span> {duplicateRFP.items.map(i => i.name).slice(0, 2).join(', ')}{duplicateRFP.items.length > 2 ? '...' : ''}</p>
+                                    <p><span className="font-medium">Budget:</span> {duplicateRFP.currency} {duplicateRFP.budget?.toLocaleString()}</p>
+                                </div>
+                                <p> Do you want to create a new RFP?</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-2">
+
+                            <button
+                                onClick={() => {
+                                    createRFP(input, true);
+                                }}
+                                className="flex-1 px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                            >
+                                Yes,Create new RFP
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setCurrentRFPId(duplicateRFP._id);
+                                    clearDuplicateRFP();
+                                    // setShowPreview(true);
+                                    handleConfirm()
+                                }}
+                                className="flex-1 px-4 py-2 bg-white border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors"
+                            >
+                                No,Send existing RFP
+                            </button>
+
+                        </div>
+                    </div>
                 </div>
             )}
 
