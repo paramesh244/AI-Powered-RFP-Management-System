@@ -105,7 +105,7 @@ Other
 ## 3. API Documentation
 
 - Create RFP (NL → structured)  
-  POST /api/rfp/create  
+  POST /rfp/create  
   Body:
   ```json
   { "naturalLanguageDescription": "We need 10 laptops with 16GB RAM delivered within 20 days..." }
@@ -113,13 +113,13 @@ Other
   Response: structured RFP JSON
 
 - Get all RFPs  
-  GET /api/rfp/
+  GET /rfp/
 
 - Get RFP by ID  
-  GET /api/rfp/:id
+  GET /rfp/:id
 
 - Send RFP Emails to Vendors  
-  POST /api/rfp/:id/send  
+  POST /rfp/:id/send  
   Body:
   ```json
   { "vendorIds": ["vendor1", "vendor2"] }
@@ -133,11 +133,11 @@ Other
   - No API call required — background IMAP listener processes incoming messages.
 
 - List all proposals / inbox  
-  GET /api/rfp/inbox  
+  GET /rfp/inbox  
   Supports query params: `?page=1&limit=20&rfpId=xxx&vendorId=yyy`
 
 - Compare proposals (AI scoring)  
-  GET /api/rfp/:id/comparison  
+  GET /rfp/:id/comparison  
   Response includes proposals, rankings, recommended vendor, estimated savings.
 
 ---
@@ -147,13 +147,12 @@ Other
 - LLM used to parse NL RFPs and unstructured vendor replies into structured JSON.
 - PDF.js (`pdfjs-dist`) used for text extraction from PDFs.
 - IMAP listener monitors Gmail inbox and auto-processes vendor replies.
-- Metadata about attachments is stored in DB (not raw PDFs) for performance.
-- Scoring logic delegated to AI; system expects structured JSON (has fallbacks).
+- Scoring logic delegated to AI; system expects structured JSON .
 - Batched email sending to avoid SMTP throttling.
 
 Assumptions:
 - Vendors reply to RFP email thread.
-- PDF attachments contain selectable text; scanned PDFs flagged `needs_review`.
+- PDF attachments contain selectable text.
 - Vendor IDs in subject help matching.
 - Gmail IMAP delivers messages in sequence (best-effort).
 
@@ -162,13 +161,13 @@ Assumptions:
 ## 5. AI Tools Usage
 
 Tools mentioned for development:
-- GPT family / Claude / other LLMs / GitHub Copilot
+- ChatGPT 5.1
 
 How they were used:
-- Generating boilerplate routes and schemas.
 - PDF parsing error handling.
 - IMAP processing pipeline and JSON formatting prompts.
 - Frontend UI scaffolding.
+
 
 Key prompts included:
 - "Create a robust IMAP listener that parses emails and PDF attachments."
@@ -177,7 +176,6 @@ Key prompts included:
 
 What was learned:
 - Handling IMAP & SMTP reliably.
-- Extracting text from PDFs in Node.js.
 - Enforcing structured JSON output from LLMs.
 - Best practices for batching SMTP sends and error handling.
 
