@@ -64,9 +64,22 @@ Frontend
 ```bash
 cd frontend
 npm install
-npm run dev
-# Frontend: http://localhost:5173
+
 ```
+Create `.env` (example)
+
+```env
+VITE_API_BASE_URL=http://localhost:3000
+```
+
+
+Run frontend
+```bash
+npm run dev
+# frontend: http://localhost:5173
+
+```
+
 
 ### 1.3 Configure Gmail (if used)
 
