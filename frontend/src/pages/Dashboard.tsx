@@ -52,12 +52,6 @@ export default function Dashboard() {
 
     const currentRFP = rfps.find(r => r._id === currentRFPId);
 
-    // If no RFP is selected or we want to see the list, we can show the list.
-    // However, the requirement implies we should be able to navigate.
-    // Let's use a two-column layout if screen is wide, or just a list if no RFP selected.
-    // For simplicity and better UX on small screens, let's do:
-    // If !currentRFPId -> Show List
-    // If currentRFPId -> Show Detail (with back button to list)
 
     if (!currentRFPId || !currentRFP) {
         return (

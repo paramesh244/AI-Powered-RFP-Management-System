@@ -29,8 +29,8 @@ export interface Vendor {
     contact_person: string;
     phone: string;
     notes?: string;
-    rating?: number; // Optional as it's not in the create response
-    tags?: string[]; // Optional 
+    rating?: number; 
+    tags?: string[]; 
 }
 
 export interface VendorResponse {
@@ -38,7 +38,7 @@ export interface VendorResponse {
     notes: any;
     _id: string;
     rfpId: string;
-    vendorId: Vendor; // API returns the full vendor object nested
+    vendorId: Vendor; 
     price: number | null;
     delivery: string;
     warranty: string;
@@ -53,8 +53,8 @@ export interface VendorResponse {
         _id?: string;
     }[];
     createdAt: string;
-    aiScore?: number; // Optional, might be added by frontend or comparison API
-    matchStatus?: 'high' | 'medium' | 'low'; // Optional
+    aiScore?: number;
+    matchStatus?: 'high' | 'medium' | 'low'; 
 }
 
 export interface ComparisonProposal {
