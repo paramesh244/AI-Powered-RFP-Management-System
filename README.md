@@ -135,7 +135,7 @@ Other
   POST /rfp/:id/send  
   Body:
   ```json
-  { "vendorIds": ["vendor1", "vendor2"] }
+  { "vendorIds": ["vendor1Id", "vendor2Id"] }
   ```
   Response:
   ```json
