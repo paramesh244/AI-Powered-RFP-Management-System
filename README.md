@@ -1,4 +1,4 @@
-# 🚀 AI-Powered RFP Management System
+# AI-Powered RFP Management System
 
 Automates the entire RFP workflow — create RFPs from natural language, send vendor invitations via email, receive and parse vendor proposals (IMAP + PDF parsing), and generate proposal comparisons with scoring & recommendations.
 
