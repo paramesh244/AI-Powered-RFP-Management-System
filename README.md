@@ -81,7 +81,7 @@ npm run dev
 ```
 
 
-### 1.3 Configure Gmail (if used)
+### 1.3 Configure Gmail
 
 - Generate an App Password: Google Account → Security → App Passwords.
 - Enable IMAP: Gmail Settings → Forwarding and POP/IMAP → Enable IMAP.
@@ -110,7 +110,7 @@ Backend
 
 Other
 - MongoDB (Mongoose)
-- AI provider (Gemini or other LLM)
+- AI provider (Gemini)
 - pdfjs-dist (PDF extraction), mailparser
 
 ---
